@@ -17,7 +17,7 @@ const (
 	rrx
 )
 
-func (cpu *CPU) lli() (uint32, bool) {
+func lli(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	shiftAmount := int(bits.GetBits(instruction, 11, 7)) & 0xff
 	// Register to be shifted
@@ -28,7 +28,7 @@ func (cpu *CPU) lli() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) llr() (uint32, bool) {
+func llr(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	// Reg holding the amount of the shift
 	shiftAmountReg := reg(bits.GetBits(instruction, 11, 8))
@@ -41,7 +41,7 @@ func (cpu *CPU) llr() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) lri() (uint32, bool) {
+func lri(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	shiftAmount := int(bits.GetBits(instruction, 11, 7)) & 0xff
 	if shiftAmount == 0 {
@@ -54,7 +54,7 @@ func (cpu *CPU) lri() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) lrr() (uint32, bool) {
+func lrr(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	register := reg(bits.GetBits(instruction, 11, 8))
 	shiftAmount := int(cpu.readReg(register)) & 0xff
@@ -65,7 +65,7 @@ func (cpu *CPU) lrr() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) ari() (uint32, bool) {
+func ari(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	shiftAmount := int(bits.GetBits(instruction, 11, 7)) & 0xff
 	if shiftAmount == 0 {
@@ -78,7 +78,7 @@ func (cpu *CPU) ari() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) arr() (uint32, bool) {
+func arr(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	register := reg(bits.GetBits(instruction, 11, 8))
 	shiftAmount := int(cpu.readReg(register)) & 0xff
@@ -89,7 +89,7 @@ func (cpu *CPU) arr() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) rri() (uint32, bool) {
+func rri(cpu *CPU) (uint32, bool) {
 
 	instruction := cpu.currentInstruction
 	shiftAmount := int(bits.GetBits(instruction, 11, 7)) & 0xff
@@ -104,7 +104,7 @@ func (cpu *CPU) rri() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) rrr() (uint32, bool) {
+func rrr(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	register := reg(bits.GetBits(instruction, 11, 8))
 	shiftAmount := int(cpu.readReg(register)) & 0xff
@@ -115,7 +115,7 @@ func (cpu *CPU) rrr() (uint32, bool) {
 	return operand, carryOut
 }
 
-func (cpu *CPU) imm() (uint32, bool) {
+func imm(cpu *CPU) (uint32, bool) {
 	instruction := cpu.currentInstruction
 	operand := bits.GetBits(instruction, 7, 0)
 	rotate := int(bits.GetBits(instruction, 11, 8))
@@ -124,7 +124,7 @@ func (cpu *CPU) imm() (uint32, bool) {
 
 }
 
-type arthAddrMode func() (uint32, bool)
+type arthAddrMode func(cpu *CPU) (uint32, bool)
 
 func isNegative(val uint32) bool {
 	return bits.GetBit(val, 31)
@@ -165,12 +165,12 @@ func parseDataInstr(instruction uint32) (reg, reg, bool) {
 
 // ADD Instructions
 
-func (cpu *CPU) add(addressingMode arthAddrMode) {
+func add(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destinationReg, setConditions := parseDataInstr(cpu.currentInstruction)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	firstOp := cpu.readReg(firstOpReg)
 	result := firstOp + secondOp
 	cpu.setReg(destinationReg, result)
@@ -190,12 +190,12 @@ func (cpu *CPU) add(addressingMode arthAddrMode) {
 	cpu.setFlag(zero, result == 0)
 }
 
-func (cpu *CPU) addC(addressingMode arthAddrMode) {
+func addC(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destinationReg, setConditions := parseDataInstr(cpu.currentInstruction)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	firstOp := cpu.readReg(firstOpReg)
 	if cpu.isFlag(carry) {
 		secondOp++
@@ -220,86 +220,86 @@ func (cpu *CPU) addC(addressingMode arthAddrMode) {
 
 // Add Instruction handlers
 var addLLI = func(cpu *CPU) {
-	cpu.add(cpu.lli)
+	add(lli, cpu)
 }
 
 var addLLR = func(cpu *CPU) {
-	cpu.add(cpu.llr)
+	add(llr, cpu)
 }
 
 var addLRI = func(cpu *CPU) {
-	cpu.add(cpu.lri)
+	add(lri, cpu)
 }
 
 var addLRR = func(cpu *CPU) {
-	cpu.add(cpu.lrr)
+	add(lrr, cpu)
 }
 
 var addARI = func(cpu *CPU) {
-	cpu.add(cpu.ari)
+	add(ari, cpu)
 }
 
 var addARR = func(cpu *CPU) {
-	cpu.add(cpu.arr)
+	add(arr, cpu)
 }
 
 var addRRI = func(cpu *CPU) {
-	cpu.add(cpu.rri)
+	add(rri, cpu)
 }
 
 var addRRR = func(cpu *CPU) {
-	cpu.add(cpu.rrr)
+	add(rrr, cpu)
 }
 
 var addIMM = func(cpu *CPU) {
-	cpu.add(cpu.imm)
+	add(imm, cpu)
 }
 
 // ADDC instruction handlers
 var addCarryLLI = func(cpu *CPU) {
-	cpu.addC(cpu.lli)
+	addC(lli, cpu)
 }
 
 var addCarryLLR = func(cpu *CPU) {
-	cpu.addC(cpu.llr)
+	addC(llr, cpu)
 }
 
 var addCarryLRI = func(cpu *CPU) {
-	cpu.addC(cpu.lri)
+	addC(lri, cpu)
 }
 
 var addCarryLRR = func(cpu *CPU) {
-	cpu.addC(cpu.lrr)
+	addC(lrr, cpu)
 }
 
 var addCarryARI = func(cpu *CPU) {
-	cpu.addC(cpu.ari)
+	addC(ari, cpu)
 }
 
 var addCarryARR = func(cpu *CPU) {
-	cpu.addC(cpu.arr)
+	addC(arr, cpu)
 }
 
 var addCarryRRI = func(cpu *CPU) {
-	cpu.addC(cpu.rri)
+	addC(rri, cpu)
 }
 
 var addCarryRRR = func(cpu *CPU) {
-	cpu.addC(cpu.rrr)
+	addC(rrr, cpu)
 }
 
 var addCarryIMM = func(cpu *CPU) {
-	cpu.addC(cpu.imm)
+	addC(imm, cpu)
 }
 
 // AND Instructions
-func (cpu *CPU) and(addressingMode arthAddrMode) {
+func and(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp & secondOp
 	cpu.setReg(destReg, result)
 
@@ -316,50 +316,50 @@ func (cpu *CPU) and(addressingMode arthAddrMode) {
 }
 
 var andLLI = func(cpu *CPU) {
-	cpu.and(cpu.lli)
+	and(lli, cpu)
 }
 
 var andLLR = func(cpu *CPU) {
-	cpu.and(cpu.llr)
+	and(llr, cpu)
 }
 
 var andLRI = func(cpu *CPU) {
-	cpu.and(cpu.lri)
+	and(lri, cpu)
 }
 
 var andLRR = func(cpu *CPU) {
-	cpu.and(cpu.lrr)
+	and(lrr, cpu)
 }
 
 var andARI = func(cpu *CPU) {
-	cpu.and(cpu.ari)
+	and(ari, cpu)
 }
 
 var andARR = func(cpu *CPU) {
-	cpu.and(cpu.arr)
+	and(arr, cpu)
 }
 
 var andRRI = func(cpu *CPU) {
-	cpu.and(cpu.rri)
+	and(rri, cpu)
 }
 
 var andRRR = func(cpu *CPU) {
-	cpu.and(cpu.rrr)
+	and(rrr, cpu)
 }
 
 var andIMM = func(cpu *CPU) {
-	cpu.and(cpu.imm)
+	and(imm, cpu)
 }
 
 // BIC Instruction
 
-func (cpu *CPU) bic(addressingMode arthAddrMode) {
+func bic(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp & ^secondOp
 	cpu.setReg(destReg, result)
 
@@ -379,50 +379,50 @@ func (cpu *CPU) bic(addressingMode arthAddrMode) {
 }
 
 var bicLLI = func(cpu *CPU) {
-	cpu.bic(cpu.lli)
+	bic(lli, cpu)
 }
 
 var bicLLR = func(cpu *CPU) {
-	cpu.bic(cpu.llr)
+	bic(llr, cpu)
 }
 
 var bicLRI = func(cpu *CPU) {
-	cpu.bic(cpu.lri)
+	bic(lri, cpu)
 }
 
 var bicLRR = func(cpu *CPU) {
-	cpu.bic(cpu.lrr)
+	bic(lrr, cpu)
 }
 
 var bicARI = func(cpu *CPU) {
-	cpu.bic(cpu.ari)
+	bic(ari, cpu)
 }
 
 var bicARR = func(cpu *CPU) {
-	cpu.bic(cpu.arr)
+	bic(arr, cpu)
 }
 
 var bicRRI = func(cpu *CPU) {
-	cpu.bic(cpu.rri)
+	bic(rri, cpu)
 }
 
 var bicRRR = func(cpu *CPU) {
-	cpu.bic(cpu.rrr)
+	bic(rrr, cpu)
 }
 
 var bicIMM = func(cpu *CPU) {
-	cpu.bic(cpu.imm)
+	bic(imm, cpu)
 }
 
 // Compare Negative (CMN)
 
-func (cpu *CPU) cmn(addressingMode arthAddrMode) {
+func cmn(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, _, _ := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	result := firstOp + secondOp
 
 	cpu.setFlag(negative, isNegative(result))
@@ -433,50 +433,50 @@ func (cpu *CPU) cmn(addressingMode arthAddrMode) {
 }
 
 var cmnLLI = func(cpu *CPU) {
-	cpu.cmn(cpu.lli)
+	cmn(lli, cpu)
 }
 
 var cmnLLR = func(cpu *CPU) {
-	cpu.cmn(cpu.llr)
+	cmn(llr, cpu)
 }
 
 var cmnLRI = func(cpu *CPU) {
-	cpu.cmn(cpu.lri)
+	cmn(lri, cpu)
 }
 
 var cmnLRR = func(cpu *CPU) {
-	cpu.cmn(cpu.lrr)
+	cmn(lrr, cpu)
 }
 
 var cmnARI = func(cpu *CPU) {
-	cpu.cmn(cpu.ari)
+	cmn(ari, cpu)
 }
 
 var cmnARR = func(cpu *CPU) {
-	cpu.cmn(cpu.arr)
+	cmn(arr, cpu)
 }
 
 var cmnRRI = func(cpu *CPU) {
-	cpu.cmn(cpu.rri)
+	cmn(rri, cpu)
 }
 
 var cmnRRR = func(cpu *CPU) {
-	cpu.cmn(cpu.rrr)
+	cmn(rrr, cpu)
 }
 
 var cmnIMM = func(cpu *CPU) {
-	cpu.cmn(cpu.imm)
+	cmn(imm, cpu)
 }
 
 // Compare (CMP)
 
-func (cpu *CPU) cmp(addressingMode arthAddrMode) {
+func cmp(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, _, _ := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	result := firstOp - secondOp
 
 	cpu.setFlag(negative, isNegative(result))
@@ -486,49 +486,49 @@ func (cpu *CPU) cmp(addressingMode arthAddrMode) {
 }
 
 var cmpLLI = func(cpu *CPU) {
-	cpu.cmp(cpu.lli)
+	cmp(lli, cpu)
 }
 
 var cmpLLR = func(cpu *CPU) {
-	cpu.cmp(cpu.llr)
+	cmp(llr, cpu)
 }
 
 var cmpLRI = func(cpu *CPU) {
-	cpu.cmp(cpu.lri)
+	cmp(lri, cpu)
 }
 
 var cmpLRR = func(cpu *CPU) {
-	cpu.cmp(cpu.lrr)
+	cmp(lrr, cpu)
 }
 
 var cmpARI = func(cpu *CPU) {
-	cpu.cmp(cpu.ari)
+	cmp(ari, cpu)
 }
 
 var cmpARR = func(cpu *CPU) {
-	cpu.cmp(cpu.arr)
+	cmp(arr, cpu)
 }
 
 var cmpRRI = func(cpu *CPU) {
-	cpu.cmp(cpu.rri)
+	cmp(rri, cpu)
 }
 
 var cmpRRR = func(cpu *CPU) {
-	cpu.cmp(cpu.rrr)
+	cmp(rrr, cpu)
 }
 
 var cmpIMM = func(cpu *CPU) {
-	cpu.cmp(cpu.imm)
+	cmp(imm, cpu)
 }
 
 // Exclusive Or (EOR)
-func (cpu *CPU) eor(addressingMode arthAddrMode) {
+func eor(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp ^ secondOp
 	cpu.setReg(destReg, result)
 
@@ -548,48 +548,48 @@ func (cpu *CPU) eor(addressingMode arthAddrMode) {
 }
 
 var eorLLI = func(cpu *CPU) {
-	cpu.eor(cpu.lli)
+	eor(lli, cpu)
 }
 
 var eorLLR = func(cpu *CPU) {
-	cpu.eor(cpu.llr)
+	eor(llr, cpu)
 }
 
 var eorLRI = func(cpu *CPU) {
-	cpu.eor(cpu.lri)
+	eor(lri, cpu)
 }
 
 var eorLRR = func(cpu *CPU) {
-	cpu.eor(cpu.lrr)
+	eor(lrr, cpu)
 }
 
 var eorARI = func(cpu *CPU) {
-	cpu.eor(cpu.ari)
+	eor(ari, cpu)
 }
 
 var eorARR = func(cpu *CPU) {
-	cpu.eor(cpu.arr)
+	eor(arr, cpu)
 }
 
 var eorRRI = func(cpu *CPU) {
-	cpu.eor(cpu.rri)
+	eor(rri, cpu)
 }
 
 var eorRRR = func(cpu *CPU) {
-	cpu.eor(cpu.rrr)
+	eor(rrr, cpu)
 }
 
 var eorIMM = func(cpu *CPU) {
-	cpu.eor(cpu.imm)
+	eor(imm, cpu)
 }
 
 // Move (MOV)
-func (cpu *CPU) mov(addressingMode arthAddrMode) {
+func mov(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	_, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := secondOp
 	cpu.setReg(destReg, result)
 
@@ -609,48 +609,48 @@ func (cpu *CPU) mov(addressingMode arthAddrMode) {
 }
 
 var movLLI = func(cpu *CPU) {
-	cpu.mov(cpu.lli)
+	mov(lli, cpu)
 }
 
 var movLLR = func(cpu *CPU) {
-	cpu.mov(cpu.llr)
+	mov(llr, cpu)
 }
 
 var movLRI = func(cpu *CPU) {
-	cpu.mov(cpu.lri)
+	mov(lri, cpu)
 }
 
 var movLRR = func(cpu *CPU) {
-	cpu.mov(cpu.lrr)
+	mov(lrr, cpu)
 }
 
 var movARI = func(cpu *CPU) {
-	cpu.mov(cpu.ari)
+	mov(ari, cpu)
 }
 
 var movARR = func(cpu *CPU) {
-	cpu.mov(cpu.arr)
+	mov(arr, cpu)
 }
 
 var movRRI = func(cpu *CPU) {
-	cpu.mov(cpu.rri)
+	mov(rri, cpu)
 }
 
 var movRRR = func(cpu *CPU) {
-	cpu.mov(cpu.rrr)
+	mov(rrr, cpu)
 }
 
 var movIMM = func(cpu *CPU) {
-	cpu.mov(cpu.imm)
+	mov(imm, cpu)
 }
 
 // Move Negative (MVN)
-func (cpu *CPU) mvn(addressingMode arthAddrMode) {
+func mvn(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	_, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := ^secondOp
 	cpu.setReg(destReg, result)
 
@@ -670,49 +670,49 @@ func (cpu *CPU) mvn(addressingMode arthAddrMode) {
 }
 
 var mvnLLI = func(cpu *CPU) {
-	cpu.mvn(cpu.lli)
+	mvn(lli, cpu)
 }
 
 var mvnLLR = func(cpu *CPU) {
-	cpu.mvn(cpu.llr)
+	mvn(llr, cpu)
 }
 
 var mvnLRI = func(cpu *CPU) {
-	cpu.mvn(cpu.lri)
+	mvn(lri, cpu)
 }
 
 var mvnLRR = func(cpu *CPU) {
-	cpu.mvn(cpu.lrr)
+	mvn(lrr, cpu)
 }
 
 var mvnARI = func(cpu *CPU) {
-	cpu.mvn(cpu.ari)
+	mvn(ari, cpu)
 }
 
 var mvnARR = func(cpu *CPU) {
-	cpu.mvn(cpu.arr)
+	mvn(arr, cpu)
 }
 
 var mvnRRI = func(cpu *CPU) {
-	cpu.mvn(cpu.rri)
+	mvn(rri, cpu)
 }
 
 var mvnRRR = func(cpu *CPU) {
-	cpu.mvn(cpu.rrr)
+	mvn(rrr, cpu)
 }
 
 var mvnIMM = func(cpu *CPU) {
-	cpu.mvn(cpu.imm)
+	mvn(imm, cpu)
 }
 
 // Logical OR (ORR)
-func (cpu *CPU) orr(addressingMode arthAddrMode) {
+func orr(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp | secondOp
 	cpu.setReg(destReg, result)
 
@@ -732,49 +732,49 @@ func (cpu *CPU) orr(addressingMode arthAddrMode) {
 }
 
 var orrLLI = func(cpu *CPU) {
-	cpu.orr(cpu.lli)
+	orr(lli, cpu)
 }
 
 var orrLLR = func(cpu *CPU) {
-	cpu.orr(cpu.llr)
+	orr(llr, cpu)
 }
 
 var orrLRI = func(cpu *CPU) {
-	cpu.orr(cpu.lri)
+	orr(lri, cpu)
 }
 
 var orrLRR = func(cpu *CPU) {
-	cpu.orr(cpu.lrr)
+	orr(lrr, cpu)
 }
 
 var orrARI = func(cpu *CPU) {
-	cpu.orr(cpu.ari)
+	orr(ari, cpu)
 }
 
 var orrARR = func(cpu *CPU) {
-	cpu.orr(cpu.arr)
+	orr(arr, cpu)
 }
 
 var orrRRI = func(cpu *CPU) {
-	cpu.orr(cpu.rri)
+	orr(rri, cpu)
 }
 
 var orrRRR = func(cpu *CPU) {
-	cpu.orr(cpu.rrr)
+	orr(rrr, cpu)
 }
 
 var orrIMM = func(cpu *CPU) {
-	cpu.orr(cpu.imm)
+	orr(imm, cpu)
 }
 
 // Reverse Subtract (RSB)
-func (cpu *CPU) rsb(addressingMode arthAddrMode) {
+func rsb(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	result := secondOp - firstOp
 	cpu.setReg(destReg, result)
 
@@ -795,43 +795,43 @@ func (cpu *CPU) rsb(addressingMode arthAddrMode) {
 }
 
 var rsbLLI = func(cpu *CPU) {
-	cpu.rsb(cpu.lli)
+	rsb(lli, cpu)
 }
 
 var rsbLLR = func(cpu *CPU) {
-	cpu.rsb(cpu.llr)
+	rsb(llr, cpu)
 }
 
 var rsbLRI = func(cpu *CPU) {
-	cpu.rsb(cpu.lri)
+	rsb(lri, cpu)
 }
 
 var rsbLRR = func(cpu *CPU) {
-	cpu.rsb(cpu.lrr)
+	rsb(lrr, cpu)
 }
 
 var rsbARI = func(cpu *CPU) {
-	cpu.rsb(cpu.ari)
+	rsb(ari, cpu)
 }
 
 var rsbARR = func(cpu *CPU) {
-	cpu.rsb(cpu.arr)
+	rsb(arr, cpu)
 }
 
 var rsbRRI = func(cpu *CPU) {
-	cpu.rsb(cpu.rri)
+	rsb(rri, cpu)
 }
 
 var rsbRRR = func(cpu *CPU) {
-	cpu.rsb(cpu.rrr)
+	rsb(rrr, cpu)
 }
 
 var rsbIMM = func(cpu *CPU) {
-	cpu.rsb(cpu.imm)
+	rsb(imm, cpu)
 }
 
 // Reverse Subtract with Carry (RSC)
-func (cpu *CPU) rsc(addressingMode arthAddrMode) {
+func rsc(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
@@ -840,7 +840,7 @@ func (cpu *CPU) rsc(addressingMode arthAddrMode) {
 	if !cpu.isFlag(carry) {
 		firstOp++
 	}
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	result := secondOp - firstOp
 	cpu.setReg(destReg, result)
 
@@ -861,49 +861,49 @@ func (cpu *CPU) rsc(addressingMode arthAddrMode) {
 }
 
 var rscLLI = func(cpu *CPU) {
-	cpu.rsc(cpu.lli)
+	rsc(lli, cpu)
 }
 
 var rscLLR = func(cpu *CPU) {
-	cpu.rsc(cpu.llr)
+	rsc(llr, cpu)
 }
 
 var rscLRI = func(cpu *CPU) {
-	cpu.rsc(cpu.lri)
+	rsc(lri, cpu)
 }
 
 var rscLRR = func(cpu *CPU) {
-	cpu.rsc(cpu.lrr)
+	rsc(lrr, cpu)
 }
 
 var rscARI = func(cpu *CPU) {
-	cpu.rsc(cpu.ari)
+	rsc(ari, cpu)
 }
 
 var rscARR = func(cpu *CPU) {
-	cpu.rsc(cpu.arr)
+	rsc(arr, cpu)
 }
 
 var rscRRI = func(cpu *CPU) {
-	cpu.rsc(cpu.rri)
+	rsc(rri, cpu)
 }
 
 var rscRRR = func(cpu *CPU) {
-	cpu.rsc(cpu.rrr)
+	rsc(rrr, cpu)
 }
 
 var rscIMM = func(cpu *CPU) {
-	cpu.rsc(cpu.imm)
+	rsc(imm, cpu)
 }
 
 // Subtract with Carry (SBC)
-func (cpu *CPU) sbc(addressingMode arthAddrMode) {
+func sbc(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	if !cpu.isFlag(carry) {
 		secondOp++
 	}
@@ -927,49 +927,49 @@ func (cpu *CPU) sbc(addressingMode arthAddrMode) {
 }
 
 var sbcLLI = func(cpu *CPU) {
-	cpu.sbc(cpu.lli)
+	sbc(lli, cpu)
 }
 
 var sbcLLR = func(cpu *CPU) {
-	cpu.sbc(cpu.llr)
+	sbc(llr, cpu)
 }
 
 var sbcLRI = func(cpu *CPU) {
-	cpu.sbc(cpu.lri)
+	sbc(lri, cpu)
 }
 
 var sbcLRR = func(cpu *CPU) {
-	cpu.sbc(cpu.lrr)
+	sbc(lrr, cpu)
 }
 
 var sbcARI = func(cpu *CPU) {
-	cpu.sbc(cpu.ari)
+	sbc(ari, cpu)
 }
 
 var sbcARR = func(cpu *CPU) {
-	cpu.sbc(cpu.arr)
+	sbc(arr, cpu)
 }
 
 var sbcRRI = func(cpu *CPU) {
-	cpu.sbc(cpu.rri)
+	sbc(rri, cpu)
 }
 
 var sbcRRR = func(cpu *CPU) {
-	cpu.sbc(cpu.rrr)
+	sbc(rrr, cpu)
 }
 
 var sbcIMM = func(cpu *CPU) {
-	cpu.sbc(cpu.imm)
+	sbc(imm, cpu)
 }
 
 // Subtract (SUB)
-func (cpu *CPU) sub(addressingMode arthAddrMode) {
+func sub(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, setConditions := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, _ := addressingMode()
+	secondOp, _ := addressingMode(cpu)
 	result := firstOp - secondOp
 	cpu.setReg(destReg, result)
 
@@ -990,49 +990,49 @@ func (cpu *CPU) sub(addressingMode arthAddrMode) {
 }
 
 var subLLI = func(cpu *CPU) {
-	cpu.sub(cpu.lli)
+	sub(lli, cpu)
 }
 
 var subLLR = func(cpu *CPU) {
-	cpu.sub(cpu.llr)
+	sub(llr, cpu)
 }
 
 var subLRI = func(cpu *CPU) {
-	cpu.sub(cpu.lri)
+	sub(lri, cpu)
 }
 
 var subLRR = func(cpu *CPU) {
-	cpu.sub(cpu.lrr)
+	sub(lrr, cpu)
 }
 
 var subARI = func(cpu *CPU) {
-	cpu.sub(cpu.ari)
+	sub(ari, cpu)
 }
 
 var subARR = func(cpu *CPU) {
-	cpu.sub(cpu.arr)
+	sub(arr, cpu)
 }
 
 var subRRI = func(cpu *CPU) {
-	cpu.sub(cpu.rri)
+	sub(rri, cpu)
 }
 
 var subRRR = func(cpu *CPU) {
-	cpu.sub(cpu.rrr)
+	sub(rrr, cpu)
 }
 
 var subIMM = func(cpu *CPU) {
-	cpu.sub(cpu.imm)
+	sub(imm, cpu)
 }
 
 // Test Equivalence (TEQ)
-func (cpu *CPU) teq(addressingMode arthAddrMode) {
+func teq(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, _ := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp ^ secondOp
 	cpu.setReg(destReg, result)
 
@@ -1043,49 +1043,49 @@ func (cpu *CPU) teq(addressingMode arthAddrMode) {
 }
 
 var teqLLI = func(cpu *CPU) {
-	cpu.teq(cpu.lli)
+	teq(lli, cpu)
 }
 
 var teqLLR = func(cpu *CPU) {
-	cpu.teq(cpu.llr)
+	teq(llr, cpu)
 }
 
 var teqLRI = func(cpu *CPU) {
-	cpu.teq(cpu.lri)
+	teq(lri, cpu)
 }
 
 var teqLRR = func(cpu *CPU) {
-	cpu.teq(cpu.lrr)
+	teq(lrr, cpu)
 }
 
 var teqARI = func(cpu *CPU) {
-	cpu.teq(cpu.ari)
+	teq(ari, cpu)
 }
 
 var teqARR = func(cpu *CPU) {
-	cpu.teq(cpu.arr)
+	teq(arr, cpu)
 }
 
 var teqRRI = func(cpu *CPU) {
-	cpu.teq(cpu.rri)
+	teq(rri, cpu)
 }
 
 var teqRRR = func(cpu *CPU) {
-	cpu.teq(cpu.rrr)
+	teq(rrr, cpu)
 }
 
 var teqIMM = func(cpu *CPU) {
-	cpu.teq(cpu.imm)
+	teq(imm, cpu)
 }
 
 // Test (TST)
-func (cpu *CPU) tst(addressingMode arthAddrMode) {
+func tst(addressingMode arthAddrMode, cpu *CPU) {
 	if !testCondition(cpu) {
 		return
 	}
 	firstOpReg, destReg, _ := parseDataInstr(cpu.currentInstruction)
 	firstOp := cpu.readReg(firstOpReg)
-	secondOp, carryOut := addressingMode()
+	secondOp, carryOut := addressingMode(cpu)
 	result := firstOp & secondOp
 	cpu.setReg(destReg, result)
 
@@ -1096,39 +1096,39 @@ func (cpu *CPU) tst(addressingMode arthAddrMode) {
 }
 
 var tstLLI = func(cpu *CPU) {
-	cpu.tst(cpu.lli)
+	tst(lli, cpu)
 }
 
 var tstLLR = func(cpu *CPU) {
-	cpu.tst(cpu.llr)
+	tst(llr, cpu)
 }
 
 var tstLRI = func(cpu *CPU) {
-	cpu.tst(cpu.lri)
+	tst(lri, cpu)
 }
 
 var tstLRR = func(cpu *CPU) {
-	cpu.tst(cpu.lrr)
+	tst(lrr, cpu)
 }
 
 var tstARI = func(cpu *CPU) {
-	cpu.tst(cpu.ari)
+	tst(ari, cpu)
 }
 
 var tstARR = func(cpu *CPU) {
-	cpu.tst(cpu.arr)
+	tst(arr, cpu)
 }
 
 var tstRRI = func(cpu *CPU) {
-	cpu.tst(cpu.rri)
+	tst(rri, cpu)
 }
 
 var tstRRR = func(cpu *CPU) {
-	cpu.tst(cpu.rrr)
+	tst(rrr, cpu)
 }
 
 var tstIMM = func(cpu *CPU) {
-	cpu.tst(cpu.imm)
+	tst(imm, cpu)
 }
 
 func logicalShiftLeft(value *uint32, amount int, currentCarry bool) bool {
