@@ -14,13 +14,13 @@ func SetBit(bits *uint32, pos int, value bool) {
 // ShiftRightSigned shifts bits to the right and preserves the sign
 func ShiftRightSigned(bits *uint32, amount int) {
 
-	if !GetBit(*bits, 31) {
-		*bits >>= amount
+	*bits >>= amount
+	if !GetBit(*bits, 32-amount) {
+		return
 	}
 	signExtension := ^(uint32(0)) << amount
 
 	*bits |= signExtension
-	*bits &= signExtension
 }
 
 // GetBit returns if a bit at a position is set or clear.
