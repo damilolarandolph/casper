@@ -1,6 +1,11 @@
 # Created by https://www.toptal.com/developers/gitignore/api/go,vscode
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,vscode
 
+## Log Files ##
+**/foundlog.txt
+**/notfoundlog.txt
+
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe
