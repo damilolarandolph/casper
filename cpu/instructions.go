@@ -2,58 +2,60 @@ package cpu
 
 import "github.com/damilolarandolph/casper/bits"
 
-var armInstructions = [0xff][0xf]instructionHandler{}
+type instructionHandler func(cpu ArmCPU)
 
-type condition func(cpu *CPU) bool
+var armInstructions = [0xff + 1][0xf + 1]instructionHandler{}
+
+type condition func(cpu ArmCPU) bool
 
 var conditions = []condition{
 	//Equal to flag - EQ
-	func(cpu *CPU) bool { return cpu.isFlag(zero) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(zero) },
 
 	//not equal to flag - NE
-	func(cpu *CPU) bool { return !cpu.isFlag(zero) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(zero) },
 
 	//unsigned carry or same - CS/HS
-	func(cpu *CPU) bool { return cpu.isFlag(carry) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(carry) },
 
 	//unsigned lower - CC/LO
-	func(cpu *CPU) bool { return !cpu.isFlag(carry) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(carry) },
 
 	//signed negative - MI
-	func(cpu *CPU) bool { return cpu.isFlag(negative) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(negative) },
 
 	//signed positive - PL
-	func(cpu *CPU) bool { return !cpu.isFlag(negative) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(negative) },
 
 	//signed overflow - VS
-	func(cpu *CPU) bool { return cpu.isFlag(overflow) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(overflow) },
 
 	//signed no overflow - VC
-	func(cpu *CPU) bool { return !cpu.isFlag(overflow) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(overflow) },
 
 	//unsiged higher - HI
-	func(cpu *CPU) bool { return cpu.isFlag(carry) && !cpu.isFlag(zero) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(carry) && !cpu.isFlag(zero) },
 
 	//unsigned lower or same - LS
-	func(cpu *CPU) bool { return !cpu.isFlag(carry) && cpu.isFlag(zero) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(carry) && cpu.isFlag(zero) },
 
 	//signed greater or equal - GE
-	func(cpu *CPU) bool { return cpu.isFlag(negative) == cpu.isFlag(overflow) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(negative) == cpu.isFlag(overflow) },
 
 	//signed less than - LT
-	func(cpu *CPU) bool { return cpu.isFlag(negative) != cpu.isFlag(overflow) },
+	func(cpu ArmCPU) bool { return cpu.isFlag(negative) != cpu.isFlag(overflow) },
 
 	//signed greater than - GT
-	func(cpu *CPU) bool { return !cpu.isFlag(zero) && (cpu.isFlag(negative) == cpu.isFlag(overflow)) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(zero) && (cpu.isFlag(negative) == cpu.isFlag(overflow)) },
 
 	//signed less or equal - LE
-	func(cpu *CPU) bool { return !cpu.isFlag(zero) || (cpu.isFlag(negative) != cpu.isFlag(overflow)) },
+	func(cpu ArmCPU) bool { return !cpu.isFlag(zero) || (cpu.isFlag(negative) != cpu.isFlag(overflow)) },
 
 	//always - AL
-	func(cpu *CPU) bool { return true },
+	func(cpu ArmCPU) bool { return true },
 
 	//never - NV
-	func(cpu *CPU) bool { return false },
+	func(cpu ArmCPU) bool { return false },
 }
 
 func populateInstruction(rows ...int) func(...int) func(instructionHandler) {
@@ -64,8 +66,8 @@ func populateInstruction(rows ...int) func(...int) func(instructionHandler) {
 	}
 }
 
-func testCondition(cpu *CPU) bool {
-	instruction := cpu.currentInstruction
+func testCondition(cpu ArmCPU) bool {
+	instruction := cpu.currentInstruction()
 	return conditions[bits.GetBits(instruction, 31, 28)](cpu)
 }
 
@@ -86,5 +88,5 @@ func getDestinationReg(instruction uint32) reg {
 }
 
 func init() {
-	populateInstruction(1, 2, 3)(1, 2, 3)(func(cpu *CPU) {})
+	populateInstruction(1, 2, 3)(1, 2, 3)(func(cpu ArmCPU) {})
 }
