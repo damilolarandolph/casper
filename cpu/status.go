@@ -27,12 +27,12 @@ const (
 	system     cpuMode = 0b11111
 )
 
-func (cpu *CPU) isFlag(fl flag) bool {
+func (cpu *Arm7) isFlag(fl flag) bool {
 	result := (cpu.readCpsr() >> fl) & 0x1
 	return result == 1
 }
 
-func (cpu *CPU) setFlag(fl flag, value bool) {
+func (cpu *Arm7) setFlag(fl flag, value bool) {
 
 	var mask uint32 = 1 << fl
 
@@ -45,11 +45,11 @@ func (cpu *CPU) setFlag(fl flag, value bool) {
 	cpu.setCpsr(cpu.readCpsr() & mask)
 }
 
-func (cpu *CPU) mode() cpuMode {
+func (cpu *Arm7) mode() cpuMode {
 	return cpuMode(cpu.readCpsr() & 0x1f)
 }
 
-func (cpu *CPU) setMode(mode cpuMode) {
+func (cpu *Arm7) setMode(mode cpuMode) {
 	var mask uint32
 	mask = (^mask) | uint32(mode)
 	cpu.setCpsr(cpu.readCpsr() & mask)
