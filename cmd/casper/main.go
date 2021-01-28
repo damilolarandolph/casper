@@ -1,25 +1,12 @@
 package main
 
-import (
-	"os"
-	"runtime"
-
-	"github.com/therecipe/qt/gui"
-	"github.com/therecipe/qt/widgets"
-)
+import "github.com/damilolarandolph/casper/cpu"
 
 func main() {
-
-	app := widgets.NewQApplication(len(os.Args), os.Args)
-
-	window := gui.NewQWindow(gui.QGuiApplication_PrimaryScreen())
-	window.Resize2(250, 150)
-	window.SetTitle("Simple exampl")
-	window.Show()
-	app.Exec()
-	return
+	cpu := cpu.NewArm7(2)
+	cpu.Tick()
+	cpu.Run()
 }
 
 func init() {
-	runtime.LockOSThread()
 }
