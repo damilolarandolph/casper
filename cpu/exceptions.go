@@ -70,7 +70,11 @@ var (
 	}
 )
 
-func (cpu *CPU) requestInterrupt(ex exception) {
+func (cpu *Arm7) highIrqVectors() bool {
+	return cpu.irqHigh
+}
+
+func (cpu *Arm7) requestInterrupt(ex exception) {
 
 	if compare(ex, FiqEx) && cpu.isFlag(fiqDisable) {
 		return
@@ -86,4 +90,10 @@ func (cpu *CPU) requestInterrupt(ex exception) {
 	}
 	cpu.setFlag(irqDisable, true)
 
+	if cpu.irqHigh {
+		cpu.setPc(ex.highAddress)
+		return
+	}
+
+	cpu.setPc(ex.normalAddress)
 }
