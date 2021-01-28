@@ -27,6 +27,7 @@ func ShiftRightSigned(bits *uint32, amount int) {
 func GetBit(bits uint32, pos int) bool {
 	var result bool
 	bits >>= pos
+	bits &= 0x1
 
 	if bits > 0 {
 		result = true
@@ -42,6 +43,22 @@ func GetBits(bits uint32, from int, to int) uint32 {
 		return (bits >> to) & 0x1
 	}
 	bits <<= (31 - from)
-	bits >>= (31 - (from - to))
+	bits >>= to + (31 - from)
 	return bits
+}
+
+// NumSetBits counts the number of set bits in a value.
+func NumSetBits(bits uint32) int {
+
+	var numOfBits int
+
+	for bits != 0 {
+		if (bits & 0x1) != 0 {
+			numOfBits++
+		}
+		bits >>= 1
+	}
+
+	return numOfBits
+
 }
